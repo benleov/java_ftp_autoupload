@@ -77,6 +77,8 @@ public class FTPProcessor implements Runnable {
 				}
 
 			}
+			
+			running = false;
 
 		} else {
 			logger.warn("Processor already running. Ignoring.");

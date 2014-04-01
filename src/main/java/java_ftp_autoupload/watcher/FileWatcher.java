@@ -15,10 +15,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.WatchEvent;
+import java.nio.file.WatchEvent.Kind;
 import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -39,7 +42,7 @@ import org.slf4j.LoggerFactory;
  * 
  */
 
-public class FileWatcher {
+public class FileWatcher implements Runnable {
 
 	private static final Logger logger = LoggerFactory
 			.getLogger(FileWatcher.class);
@@ -47,6 +50,8 @@ public class FileWatcher {
 	private final Map<WatchKey, Path> keys;
 	private final boolean recursive;
 	private boolean trace = false;
+
+	private List<FileWatcherListener> listeners;
 
 	public FileWatcher(String directory, boolean recursive) throws IOException {
 		this(Paths.get(new File(directory).toURI()), recursive);
@@ -59,6 +64,8 @@ public class FileWatcher {
 		this.watcher = FileSystems.getDefault().newWatchService();
 		this.keys = new HashMap<WatchKey, Path>();
 		this.recursive = recursive;
+
+		this.listeners = new ArrayList<>();
 
 		if (recursive) {
 			logger.info("Scanning {} ...", dir);
@@ -116,7 +123,8 @@ public class FileWatcher {
 	/**
 	 * Process all events for keys queued to the watcher
 	 */
-	public void start() {
+	@Override
+	public void run() {
 		logger.info("Starting.");
 		for (;;) {
 
@@ -136,7 +144,7 @@ public class FileWatcher {
 			}
 
 			for (WatchEvent<?> event : key.pollEvents()) {
-				WatchEvent.Kind kind = event.kind();
+				Kind<?> kind = event.kind();
 
 				// TBD - provide example of how OVERFLOW event is handled
 				if (kind == OVERFLOW) {
@@ -149,7 +157,8 @@ public class FileWatcher {
 				Path child = dir.resolve(name);
 
 				// print out event
-				logger.info("{}: {}", event.kind().name(), child);
+				//logger.info("{}: {}", event.kind().name(), child);
+				notifyListeners(kind, new File(child.toUri()));
 
 				// if directory is created, and watching recursively, then
 				// register it and its sub-directories
@@ -176,4 +185,26 @@ public class FileWatcher {
 			}
 		}
 	}
+
+	private void notifyListeners(Kind<?> kind, File file) {
+
+		for (FileWatcherListener curr : listeners) {
+
+			if (kind == ENTRY_CREATE) {
+				curr.onFileChange(FileOperation.CREATE, file);
+			} else if (kind == ENTRY_DELETE) {
+				curr.onFileChange(FileOperation.DELETE, file);
+			} else if (kind == ENTRY_MODIFY) {
+				curr.onFileChange(FileOperation.MODIFY, file);
+			} else {
+				curr.onFileChange(FileOperation.UNKNOWN, file);
+			}
+
+		}
+	}
+	
+	public void addListener(FileWatcherListener listener) {
+		listeners.add(listener);
+	}
+
 }

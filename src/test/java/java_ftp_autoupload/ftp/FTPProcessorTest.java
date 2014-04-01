@@ -9,6 +9,7 @@ import java_ftp_autoupload.ftp.command.impl.Connect;
 import java_ftp_autoupload.ftp.command.impl.Disconnect;
 import java_ftp_autoupload.ftp.command.impl.Login;
 import java_ftp_autoupload.ftp.command.impl.Logout;
+import java_ftp_autoupload.ftp.command.impl.UploadFile;
 import lib.config.base.configuration.ConfigurationList;
 import lib.config.base.configuration.factory.ConfigurationFactory;
 import lib.config.base.configuration.impl.BasicConfiguration;
@@ -65,7 +66,7 @@ public class FTPProcessorTest {
 	}
 
 	@Test
-	public void test() {
+	public void testFileUpload() {
 		FTPClient client = new FTPClient();
 		FTPProcessor processor = new FTPProcessor(client);
 
@@ -73,6 +74,9 @@ public class FTPProcessorTest {
 		
 		commands.add(new Connect(host));
 		commands.add(new Login(username, password));
+		commands.add(new UploadFile(new File("test_upload.txt")));
+		
+		
 		commands.add(new Logout());
 		commands.add(new Disconnect());
 		processor.addAll(commands);

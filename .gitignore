@@ -2,3 +2,4 @@
 junit_settings.ini
 /build
 .gradle/
+/temp
