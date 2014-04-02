@@ -25,6 +25,7 @@ public class UploadFile implements Command {
 				FTPClient.BINARY_FILE_TYPE);
 		
 		FileInputStream fis = new FileInputStream(file);
+		
 		try {
 			return client.storeFile(file.getName(), fis);
 		} finally {

@@ -2,13 +2,17 @@ package java_ftp_autoupload;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import java_ftp_autoupload.ftp.FTPProcessor;
 import java_ftp_autoupload.ftp.command.impl.ChangeWorkingDirectory;
 import java_ftp_autoupload.ftp.command.impl.Connect;
+import java_ftp_autoupload.ftp.command.impl.DeleteDirectory;
 import java_ftp_autoupload.ftp.command.impl.DeleteFile;
 import java_ftp_autoupload.ftp.command.impl.Login;
+import java_ftp_autoupload.ftp.command.impl.MakeDirectory;
 import java_ftp_autoupload.ftp.command.impl.UploadFile;
 import java_ftp_autoupload.watcher.FileOperation;
 import java_ftp_autoupload.watcher.FileWatcher;
@@ -35,8 +39,9 @@ public class AutoUploader implements Runnable {
 	private final FTPProcessor ftp;
 	private final FileWatcher watcher;
 
-	private final String host, username, password, localDirectory,
-			remoteDirectory;
+	private final String host, username, password, remoteDirectory;
+
+	private final File localDirectory;
 
 	private final LinkedBlockingQueue<PendingOperation> pending;
 
@@ -64,7 +69,7 @@ public class AutoUploader implements Runnable {
 		username = config.getProperty("username");
 		password = config.getProperty("password");
 
-		localDirectory = config.getProperty("local_directory");
+		localDirectory = new File(config.getProperty("local_directory"));
 		remoteDirectory = config.getProperty("remote_directory");
 
 		FTPClient client = new FTPClient();
@@ -75,7 +80,7 @@ public class AutoUploader implements Runnable {
 
 		// setup the file watcher
 
-		watcher = new FileWatcher(localDirectory, true);
+		watcher = new FileWatcher(localDirectory.getAbsolutePath(), true);
 
 		watcher.addListener(new FileWatcherListener() {
 
@@ -90,8 +95,6 @@ public class AutoUploader implements Runnable {
 	public void stop() throws InterruptedException {
 
 		if (running) {
-			running = false;
-
 			// poison pill shutdown
 			pending.put(new PendingOperation(null, null));
 		}
@@ -133,32 +136,83 @@ public class AutoUploader implements Runnable {
 				try {
 					PendingOperation curr = pending.take();
 
+					logger.info("Now processing operation: {}", curr.getOperation());
+					
 					if (curr.getOperation() == null) {
-						// shutdown
 						logger.info("AutoUploader shutting down.");
-						continue;
+						running = false;
+						break;
 					}
 
 					switch (curr.getOperation()) {
 
-					case CREATE:
+					case CREATE: {
 						ftp.put(new Connect(host));
 						ftp.put(new Login(username, password));
-						ftp.put(new ChangeWorkingDirectory(remoteDirectory));
-						ftp.put(new UploadFile(curr.getFile()));
+
+						String relative = getRelativePath(curr.getFile());
+
+						if (curr.getFile().isDirectory()) {
+							
+							logger.info("Creating directory: {}", relative);
+							
+							ftp.put(new MakeDirectory(relative));
+						} else {
+							
+							logger.info("Changing to directory {}", relative);
+							
+							ftp.put(new ChangeWorkingDirectory(relative));
+							
+							logger.info("Uploading file: {}", curr.getFile().getName());
+							
+							ftp.put(new UploadFile(curr.getFile()));
+						}
+
 						break;
-					case DELETE:
+					}
+					case DELETE: {
 						ftp.put(new Connect(host));
 						ftp.put(new Login(username, password));
-						ftp.put(new ChangeWorkingDirectory(remoteDirectory));
-						ftp.put(new DeleteFile(curr.getFile().getName()));
+
+						String relative = getRelativePath(curr.getFile());
+
+						if (curr.getFile().isDirectory()) {
+							// TODO check this is working properly!
+							logger.info("TODO delete directory: {}", relative);
+							// ftp.put(new DeleteDirectory(relative));
+						} else {
+							logger.info("Changing to directory {}", relative);
+							
+							ftp.put(new ChangeWorkingDirectory(relative));
+							
+							logger.info("Deleting file: {}", curr.getFile().getName());
+							
+							ftp.put(new DeleteFile(curr.getFile().getName()));
+						}
+						
 						break;
-					case MODIFY:
+					}
+					case MODIFY: {
+						
 						ftp.put(new Connect(host));
 						ftp.put(new Login(username, password));
-						ftp.put(new ChangeWorkingDirectory(remoteDirectory));
-						ftp.put(new UploadFile(curr.getFile()));
+						
+						String relative = getRelativePath(curr.getFile());
+						
+						if (curr.getFile().isDirectory()) {
+							// TODO
+							logger.info("NOT IMPLEMENTED");
+						} else {
+							
+							logger.info("Changing to directory {}", relative);
+							
+							ftp.put(new ChangeWorkingDirectory(relative));
+							ftp.put(new UploadFile(curr.getFile()));
+							
+						}
+
 						break;
+					}
 					case UNKNOWN:
 						logger.error("Unknown operation for file: {}",
 								curr.getFile());
@@ -181,6 +235,22 @@ public class AutoUploader implements Runnable {
 			logger.warn("AutoUploader has already started.");
 		}
 
+	}
+
+	private String getRelativePath(File curr) {
+
+		Path pathBase = Paths.get(localDirectory.toURI());
+		Path pathAbsolute = null;
+
+		if (curr.isDirectory()) {
+			pathAbsolute = Paths.get(curr.toURI());
+		} else {
+
+			pathAbsolute = Paths.get(curr.getParentFile().toURI());
+		}
+
+		Path pathRelative = pathBase.relativize(pathAbsolute);
+		return "/" + pathRelative.toString();
 	}
 
 	public static void main(String... args) throws IOException,
