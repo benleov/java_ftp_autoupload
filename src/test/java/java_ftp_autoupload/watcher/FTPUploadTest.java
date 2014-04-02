@@ -33,7 +33,7 @@ public class FTPUploadTest {
 	public void test() throws URISyntaxException, IOException {
 		
 		FileWatcher watcher = new FileWatcher("temp", true);
-		watcher.start();
+		watcher.run();
 			
 	}
 

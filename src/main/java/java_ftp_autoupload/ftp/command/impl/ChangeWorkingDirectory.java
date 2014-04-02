@@ -18,7 +18,14 @@ public class ChangeWorkingDirectory implements Command {
 	@Override
 	public boolean execute(FTPClient client) throws SocketException,
 			IOException {
-		return client.changeWorkingDirectory(pathname);
+		
+		String currDirectory = client.printWorkingDirectory();
+		
+		if(!currDirectory.equals(pathname)) {
+			return client.changeWorkingDirectory(pathname);
+		} else {
+			return true;
+		}
 	}
 
 }

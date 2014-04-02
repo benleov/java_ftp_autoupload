@@ -30,7 +30,7 @@ public class AutoUploaderTest {
 
 	@Test
 	public void test() throws IOException, ConfigurationException {
-		AutoUploader au = new AutoUploader("temp", "temp");
+		AutoUploader au = new AutoUploader();
 		
 		
 	}

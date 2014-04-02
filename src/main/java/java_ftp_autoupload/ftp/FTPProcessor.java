@@ -51,6 +51,7 @@ public class FTPProcessor implements Runnable {
 					logger.info("Processing Class: {}", command.getClass().getSimpleName());
 
 					try {
+		
 						boolean result = command.execute(client);
 
 						if(!result) {

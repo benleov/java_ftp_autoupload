@@ -7,6 +7,7 @@ import java_ftp_autoupload.ftp.command.Command;
 
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPReply;
+
 public class Login implements Command {
 	private String username, password;
 
@@ -18,8 +19,14 @@ public class Login implements Command {
 	@Override
 	public boolean execute(FTPClient client) throws SocketException,
 			IOException {
-		client.login(username, password);
-		return FTPReply.isPositiveCompletion(client.getReplyCode());
+
+		if (client.stat() == FTPReply.NOT_LOGGED_IN) {
+			client.login(username, password);
+			return FTPReply.isPositiveCompletion(client.getReplyCode());
+		} else {
+			// already logged in
+			return true;
+		}
 	}
 
 }

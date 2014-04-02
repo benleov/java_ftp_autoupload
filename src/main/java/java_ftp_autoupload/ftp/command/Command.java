@@ -10,7 +10,7 @@ public interface Command {
 	/**
 	 * represents an FTP command.
 	 * 
-	 * @return true if sucessful
+	 * @return true if successful
 	 */
 	boolean execute(FTPClient client) throws SocketException, IOException;
 }
