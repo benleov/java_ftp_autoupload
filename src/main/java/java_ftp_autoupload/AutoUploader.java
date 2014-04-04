@@ -250,7 +250,7 @@ public class AutoUploader implements Runnable {
 		}
 
 		Path pathRelative = pathBase.relativize(pathAbsolute);
-		return "/" + pathRelative.toString();
+		return remoteDirectory + "/" + pathRelative.toString();
 	}
 
 	public static void main(String... args) throws IOException,

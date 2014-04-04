@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.SocketException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import java_ftp_autoupload.ftp.command.Command;
 
@@ -41,8 +43,7 @@ public class UploadFile implements Command {
 		result = prime * result + ((file == null) ? 0 : file.hashCode());
 		return result;
 	}
-	
-	// TODO java.nio.file.Files.isSameFile(Path, Path)
+
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -55,8 +56,18 @@ public class UploadFile implements Command {
 		if (file == null) {
 			if (other.file != null)
 				return false;
-		} else if (!file.equals(other.file))
-			return false;
+		} else {
+			try {
+				
+				if (!Files.isSameFile(Paths.get(file.toURI()),
+						Paths.get(other.file.toURI()))) {
+					return false;
+				}
+				
+			} catch (IOException e) {
+				return false;
+			}
+		}
 		return true;
 	}
 

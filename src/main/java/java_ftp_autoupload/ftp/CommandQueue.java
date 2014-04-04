@@ -4,13 +4,14 @@ import java.util.Collection;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import java_ftp_autoupload.ftp.command.Command;
+import java_ftp_autoupload.ftp.command.impl.UploadFile;
 
 /**
-
+ * 
  * @author Benjamin Leov
  * 
  * @param <E>
- *
+ * 
  */
 public class CommandQueue extends LinkedBlockingQueue<Command> {
 
@@ -18,25 +19,37 @@ public class CommandQueue extends LinkedBlockingQueue<Command> {
 	 * 
 	 */
 	private static final long serialVersionUID = -3196761430858932314L;
-	
-	@Override	
+
+	@Override
 	public void put(Command object) throws InterruptedException {
-		// TODO check if this command is valid
-		super.put(object);
+
+		addCommand(object);
 	}
-	
+
 	@Override
 	public boolean addAll(Collection<? extends Command> object) {
-		// TODO check if this command is valid
-		return super.addAll(object);
-	}	
-	
- 
-	private void isDuplicate(Command command) {
-		// TODO optimisation of queue (e.g duplicate file modifies)
-		
-	
-		
+
+		for (Command curr : object) {
+			addCommand(curr);
+		}
+
+		return !object.isEmpty();
 	}
-	
+
+	private void addCommand(Command command) {
+
+		if (command instanceof UploadFile && contains(command)) {
+
+			// Processing an upload file request, but this request exists again
+			// further up the queue. Delay the uploading by removing it, and
+			// adding this one.
+
+			this.remove(command);
+		}
+
+		
+		super.add(command);
+
+	}
+
 }

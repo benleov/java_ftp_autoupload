@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.SocketException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import java_ftp_autoupload.ftp.command.Command;
 
@@ -43,19 +45,36 @@ public class DownloadFile implements Command {
 	// TODO java.nio.file.Files.isSameFile(Path, Path)
 	@Override
 	public boolean equals(Object obj) {
-		if (this == obj)
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+
+		if (obj == null) {
 			return false;
-		if (getClass() != obj.getClass())
+		}
+
+		if (getClass() != obj.getClass()) {
 			return false;
+		}
+
 		DownloadFile other = (DownloadFile) obj;
+
 		if (local == null) {
-			if (other.local != null)
+			if (other.local != null) {
 				return false;
-		} else if (!local.equals(other.local))
-			return false;
+			}
+		} else {
+
+			try {
+				if (!Files.isSameFile(Paths.get(local.toURI()),
+						Paths.get(other.local.toURI()))) {
+					return false;
+				}
+			} catch (IOException e) {
+				return false;
+			}
+		}
+
 		return true;
 	}
-
 }
