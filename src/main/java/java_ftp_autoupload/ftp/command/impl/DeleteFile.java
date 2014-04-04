@@ -21,4 +21,30 @@ public class DeleteFile implements Command {
 		return client.deleteFile(pathname);
 	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((pathname == null) ? 0 : pathname.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		DeleteFile other = (DeleteFile) obj;
+		if (pathname == null) {
+			if (other.pathname != null)
+				return false;
+		} else if (!pathname.equals(other.pathname))
+			return false;
+		return true;
+	}
+
 }

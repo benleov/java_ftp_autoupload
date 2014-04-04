@@ -23,13 +23,14 @@ public class FTPProcessor implements Runnable {
 	private static final Logger logger = LoggerFactory
 			.getLogger(FTPProcessor.class);
 
-	private final LinkedBlockingQueue<Command> commands;
+	private final CommandQueue commands;
+	
 	private final FTPClient client;
 	private boolean running;
 
 	public FTPProcessor(FTPClient client) {
 		this.client = client;
-		commands = new LinkedBlockingQueue<>();
+		commands = new CommandQueue();
 	}
 
 	@Override
@@ -47,7 +48,7 @@ public class FTPProcessor implements Runnable {
 							commands.size());
 
 					Command command = commands.take();
-
+					
 					logger.info("Processing Class: {}", command.getClass().getSimpleName());
 
 					try {

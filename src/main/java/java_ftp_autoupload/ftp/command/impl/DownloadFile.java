@@ -30,7 +30,32 @@ public class DownloadFile implements Command {
 		} finally {
 			fos.close();
 		}
+	}
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((local == null) ? 0 : local.hashCode());
+		return result;
+	}
+
+	// TODO java.nio.file.Files.isSameFile(Path, Path)
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		DownloadFile other = (DownloadFile) obj;
+		if (local == null) {
+			if (other.local != null)
+				return false;
+		} else if (!local.equals(other.local))
+			return false;
+		return true;
 	}
 
 }
