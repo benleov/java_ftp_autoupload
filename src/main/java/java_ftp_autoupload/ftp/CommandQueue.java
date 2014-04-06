@@ -4,13 +4,15 @@ import java.util.Collection;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import java_ftp_autoupload.ftp.command.Command;
+import java_ftp_autoupload.ftp.command.impl.DownloadFile;
+import java_ftp_autoupload.ftp.command.impl.MakeDirectory;
 import java_ftp_autoupload.ftp.command.impl.UploadFile;
 
 /**
  * 
- * @author Benjamin Leov
+ * Holds a queue of <code>Command</code>s.
  * 
- * @param <E>
+ * @author Benjamin Leov
  * 
  */
 public class CommandQueue extends LinkedBlockingQueue<Command> {
@@ -38,17 +40,34 @@ public class CommandQueue extends LinkedBlockingQueue<Command> {
 
 	private void addCommand(Command command) {
 
-		if (command instanceof UploadFile && contains(command)) {
+		if (contains(command)) {
 
-			// Processing an upload file request, but this request exists again
-			// further up the queue. Delay the uploading by removing it, and
-			// adding this one.
+			if (command instanceof UploadFile) {
 
-			this.remove(command);
+				// Processing an upload file request, but this request exists
+				// again further up the queue. Delay the uploading by removing it, 
+				// and adding this one.
+
+				this.remove(command);
+				super.add(command);
+			} else if (command instanceof DownloadFile) {
+				
+				// Processing an download file request, but this request exists
+				// again further up the queue. Delay the downloading by removing it, 
+				// and adding this one.
+				
+				this.remove(command);
+				super.add(command);
+			} else if (command instanceof MakeDirectory) {
+				
+				// Request to make a directory which already exists on the queue.
+				// Ignore the request.
+			}
 		}
+		
+		// TODO Remove request to delete a directory thats being made in the queue
 
 		
-		super.add(command);
 
 	}
 
